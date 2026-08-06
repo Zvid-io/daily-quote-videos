@@ -1,0 +1,169 @@
+{
+  "name": "daily-quote-ralph-waldo-emerson",
+  "resolution": "instagram-reel",
+  "frameRate": 30,
+  "backgroundColor": "#1B1E22",
+  "outputFormat": "mp4",
+  "scenes": [
+    {
+      "id": "quote",
+      "duration": 7,
+      "backgroundColor": "#1B1E22",
+      "transition": "fade",
+      "transitionId": "author",
+      "transitionDuration": 0.8,
+      "visuals": [
+        {
+          "type": "VIDEO",
+          "src": "https://videos.pexels.com/video-files/28197979/12324927_1080_1920_60fps.mp4",
+          "width": 1080,
+          "height": 1920,
+          "position": "center-center",
+          "resize": "cover",
+          "volume": 0,
+          "track": 0,
+          "enterBegin": 0,
+          "exitEnd": 7
+        },
+        {
+          "type": "SVG",
+          "width": 1080,
+          "height": 1920,
+          "track": 1,
+          "enterBegin": 0,
+          "exitEnd": 7,
+          "svg": "<svg width='1080' height='1920' viewBox='0 0 1080 1920' xmlns='http://www.w3.org/2000/svg'><rect width='1080' height='1920' fill='rgba(20,24,26,0.62)'/><rect x='70' y='70' width='940' height='1780' fill='none' stroke='rgba(240,236,227,0.35)' stroke-width='1'/><text x='150' y='560' font-family='Georgia' font-size='220' fill='rgba(240,236,227,0.55)'>&#8220;</text><path d='M420 1480 H660' stroke='rgba(240,236,227,0.6)' stroke-width='1.5'/></svg>"
+        },
+        {
+          "type": "TEXT",
+          "x": 540,
+          "y": 170,
+          "anchor": "top-center",
+          "track": 2,
+          "enterBegin": 0.3,
+          "enterEnd": 0.9,
+          "enterAnimation": "fade",
+          "exitEnd": 7,
+          "style": {
+            "fontFamily": "Inter"
+          },
+          "html": "<div style=\"text-align:center; color:#B9B4A6; font-size:23px; font-weight:600; letter-spacing:7px; text-shadow:0 2px 14px rgba(20,24,26,0.75);\">@stillmind.daily</div>"
+        },
+        {
+          "type": "TEXT",
+          "x": 540,
+          "y": 675,
+          "width": 840,
+          "anchor": "top-center",
+          "track": 3,
+          "enterBegin": 0.7,
+          "enterEnd": 1.5,
+          "enterAnimation": "smoothup",
+          "exitEnd": 7,
+          "style": {
+            "fontFamily": "Playfair Display"
+          },
+          "html": "<div style=\"text-align:center; color:#F0ECE3; font-size:62px; line-height:1.35; font-style:italic;\">Nothing great was ever achieved without enthusiasm.</div>"
+        },
+        {
+          "type": "TEXT",
+          "x": 540,
+          "y": 1530,
+          "width": 800,
+          "anchor": "top-center",
+          "track": 4,
+          "enterBegin": 1.8,
+          "enterEnd": 2.4,
+          "enterAnimation": "fade",
+          "exitEnd": 7,
+          "style": {
+            "fontFamily": "Inter"
+          },
+          "html": "<div style=\"text-align:center; color:#F0ECE3; font-size:34px; font-weight:700; letter-spacing:2px;\">&mdash; Ralph Waldo Emerson</div>"
+        }
+      ]
+    },
+    {
+      "id": "author",
+      "duration": 4.6,
+      "backgroundColor": "#14181A",
+      "visuals": [
+        {
+          "type": "IMAGE",
+          "src": "https://images.pexels.com/photos/15637846/pexels-photo-15637846.jpeg?auto=compress&cs=tinysrgb&w=1620",
+          "width": 1080,
+          "height": 1920,
+          "position": "center-center",
+          "resize": "cover",
+          "zoom": true,
+          "opacity": 0.5,
+          "track": 0,
+          "enterBegin": 0,
+          "exitEnd": 4.6
+        },
+        {
+          "type": "SVG",
+          "width": 1080,
+          "height": 1920,
+          "track": 1,
+          "enterBegin": 0,
+          "exitEnd": 4.6,
+          "svg": "<svg width='1080' height='1920' viewBox='0 0 1080 1920' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='dqrEnd' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#14181A' stop-opacity='0.6'/><stop offset='1' stop-color='#14181A' stop-opacity='0.92'/></linearGradient></defs><rect width='1080' height='1920' fill='url(#dqrEnd)'/><circle cx='540' cy='760' r='6' fill='#F0ECE3'/><path d='M420 760 H520 M560 760 H660' stroke='rgba(240,236,227,0.5)' stroke-width='1'/></svg>"
+        },
+        {
+          "type": "TEXT",
+          "x": 540,
+          "y": 850,
+          "width": 860,
+          "anchor": "top-center",
+          "track": 2,
+          "enterBegin": 0.3,
+          "enterEnd": 0.9,
+          "enterAnimation": "smoothup",
+          "exitEnd": 4.6,
+          "style": {
+            "fontFamily": "Playfair Display"
+          },
+          "html": "<div style=\"text-align:center; color:#F0ECE3; font-size:56px; font-weight:700;\">Ralph Waldo Emerson</div>"
+        },
+        {
+          "type": "TEXT",
+          "x": 540,
+          "y": 950,
+          "width": 800,
+          "anchor": "top-center",
+          "track": 3,
+          "enterBegin": 0.7,
+          "enterEnd": 1.2,
+          "enterAnimation": "fade",
+          "exitEnd": 4.6,
+          "style": {
+            "fontFamily": "Inter"
+          },
+          "html": "<div style=\"text-align:center; color:#A8A396; font-size:27px; font-weight:500; letter-spacing:2px;\">Essayist and philosopher</div>"
+        },
+        {
+          "type": "TEXT",
+          "x": 540,
+          "y": 1160,
+          "anchor": "top-center",
+          "track": 4,
+          "enterBegin": 1.1,
+          "enterEnd": 1.5,
+          "enterAnimation": "circleopen",
+          "exitEnd": 4.6,
+          "style": {
+            "fontFamily": "Inter"
+          },
+          "html": "<div style=\"display:inline-block; border:1.5px solid #F0ECE3; color:#F0ECE3; border-radius:999px; padding:22px 56px; font-size:30px; font-weight:700;\">Follow for a daily reset</div><div style=\"margin-top:16px; text-align:center; color:#7E7A6F; font-size:23px; letter-spacing:5px;\">@stillmind.daily</div>"
+        }
+      ]
+    }
+  ],
+  "audios": [
+    {
+      "src": "https://cdn.pixabay.com/audio/2025/04/21/audio_ed6f0ed574.mp3",
+      "volume": 0.15
+    }
+  ]
+}

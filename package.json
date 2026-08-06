@@ -1,0 +1,49 @@
+{
+  "name": "daily-quote-videos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Google Sheets to video automation with n8n and the Zvid video API. Turn motivational quote rows into daily vertical Reels, Shorts, and TikTok-ready MP4 videos, then write each finished video URL back to the Sheet.",
+  "keywords": [
+    "n8n",
+    "n8n workflow",
+    "n8n video automation",
+    "google sheets automation",
+    "google sheets to video",
+    "daily quote video",
+    "motivational quote video",
+    "automated reels",
+    "youtube shorts automation",
+    "instagram reels automation",
+    "faceless video automation",
+    "video api",
+    "video rendering api",
+    "json to video",
+    "programmatic video",
+    "zvid"
+  ],
+  "homepage": "https://zvid.io/n8n-workflows",
+  "docs": "https://docs.zvid.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zvid-io/n8n-google-sheets-daily-quote-videos.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Zvid-io/n8n-google-sheets-daily-quote-videos/issues"
+  },
+  "author": "Zvid <help@zvid.io> (https://zvid.io)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node src/check.js",
+    "start": "node src/index.js",
+    "dry-run": "node src/index.js --dry-run",
+    "sample": "node src/index.js --date 2026-07-28"
+  },
+  "dependencies": {
+    "csv-parse": "^6.0.0",
+    "@zvid/sdk": "^0.2.0"
+  }
+}

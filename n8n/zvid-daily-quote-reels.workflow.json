@@ -1,0 +1,825 @@
+{
+  "name": "Daily motivational quote videos from a Google Sheet (Zvid)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -460,
+        380
+      ],
+      "id": "zvid-dq-0001",
+      "name": "Every day at 8am"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        200
+      ],
+      "id": "zvid-dq-0002",
+      "name": "Test manually"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"apiUrl\": \"https://api.zvid.io\",\n  \"channelName\": \"@stillmind.daily\",\n  \"ctaText\": \"Follow for a daily reset\",\n  \"quoteFont\": \"Playfair Display\",\n  \"uiFont\": \"Inter\",\n  \"paperColor\": \"#F0ECE3\",\n  \"mutedColor\": \"#B9B4A6\",\n  \"inkColor\": \"#14181A\",\n  \"musicVolume\": 0.15,\n  \"poolIndexOverride\": -1,\n  \"backgroundVideoOverride\": \"\",\n  \"musicUrlOverride\": \"\",\n  \"statusDoneValue\": \"done\",\n  \"dryRun\": false,\n  \"pollSeconds\": 10,\n  \"timeoutMinutes\": 20\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        300
+      ],
+      "id": "zvid-dq-0003",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -20,
+        300
+      ],
+      "id": "zvid-dq-0004",
+      "name": "Read quote sheet",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// The Google Sheets node emits one item per row plus a row_number field.\n// Keep the FIRST row whose Status column is empty — row_number lets the\n// update node at the end mark exactly this row as done.\nconst rows = $input.all().map((i) => i.json);\nconst isEmpty = (v) => v === undefined || v === null || String(v).trim() === '';\nconst row = rows.find((r) => isEmpty(r.Status));\nif (!row) {\n  return [{ json: { found: false, checked: rows.length } }];\n}\nconst quote = String(row.Quote || '').trim();\nconst author = String(row.Author || '').trim();\nif (!quote || !author) {\n  throw new Error('Row ' + row.row_number + ' is missing Quote or Author. Fill both columns, or put anything in Status to skip the row.');\n}\nreturn [{\n  json: {\n    found: true,\n    quote,\n    author,\n    authorNote: String(row.AuthorNote || '').trim(),\n    rowNumber: row.row_number,\n    checked: rows.length,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "id": "zvid-dq-0005",
+      "name": "Pick next quote"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "row-found--cond",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        420,
+        300
+      ],
+      "id": "zvid-dq-0006",
+      "name": "Row found?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Every row already has a Status value, so there is nothing to render today.\n// This is a normal, successful outcome — not an error.\nconst picked = $('Pick next quote').first().json;\nreturn [{\n  json: {\n    rendered: false,\n    reason: 'No row with an empty Status column. Add fresh quote rows to the sheet.',\n    rowsChecked: picked.checked,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        480
+      ],
+      "id": "zvid-dq-0007",
+      "name": "Nothing to render today"
+    },
+    {
+      "parameters": {
+        "jsCode": "// === buildProject — identical to the frame-reviewed standalone builder ===\nfunction buildProject(config, data) {\n  const cfg = config || {};\n  const clean = (v) => String(v == null ? '' : v).replace(/\\s+/g, ' ').trim();\n  const quote = clean(data.quote);\n  const author = clean(data.author);\n  const authorNote = clean(data.authorNote);\n  if (!quote) throw new Error('The sheet row has no Quote text.');\n  if (!author) throw new Error('The sheet row has no Author.');\n\n  const channelName = clean(cfg.channelName) || '@yourchannel';\n  const ctaText = clean(cfg.ctaText) || 'Follow for more';\n  const quoteFont = clean(cfg.quoteFont) || 'Playfair Display';\n  const uiFont = clean(cfg.uiFont) || 'Inter';\n  const paper = clean(cfg.paperColor) || '#F0ECE3';\n  const muted = clean(cfg.mutedColor) || '#B9B4A6';\n  const ink = clean(cfg.inkColor) || '#14181A';\n\n  const esc = (s) => String(s).replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\n  const round = (n) => Math.round(n * 100) / 100;\n\n  // ---- daily rotation pool ------------------------------------------------\n  // Every URL verified reachable and probed (dimensions/duration/size) when\n  // this template was authored. `videoSeconds` is the source clip length: the\n  // quote scene must never outlast its background. `overlay` darkens the clip\n  // so the paper-coloured text always has contrast — brighter clips get more.\n  const MUSIC_CALM = 'https://cdn.pixabay.com/audio/2025/04/21/audio_ed6f0ed574.mp3'; // 48.6s, 1.5 MB\n  const MUSIC_WARM = 'https://cdn.pixabay.com/audio/2025/03/19/audio_56ae1dae5f.mp3'; // 115.5s, 3.7 MB\n  const POOL = [\n    { label: 'mist-forest', video: 'https://videos.pexels.com/video-files/30149713/12928657_1080_1920_60fps.mp4', videoSeconds: 15.0, music: MUSIC_CALM, overlay: 0.5 },\n    { label: 'ember-ink', video: 'https://videos.pexels.com/video-files/15168374/15168374-hd_1080_1920_24fps.mp4', videoSeconds: 38.9, music: MUSIC_WARM, overlay: 0.55 },\n    { label: 'rain-window', video: 'https://videos.pexels.com/video-files/19802056/19802056-uhd_1440_2560_30fps.mp4', videoSeconds: 50.7, music: MUSIC_CALM, overlay: 0.45 },\n    { label: 'cloud-sea', video: 'https://videos.pexels.com/video-files/32634790/13916180_1080_1920_25fps.mp4', videoSeconds: 11.0, music: MUSIC_WARM, overlay: 0.62 },\n    { label: 'calm-shore', video: 'https://videos.pexels.com/video-files/28197979/12324927_1080_1920_60fps.mp4', videoSeconds: 10.4, music: MUSIC_CALM, overlay: 0.62 },\n  ];\n\n  const when = data.date ? new Date(data.date) : new Date();\n  const dayOfYear = Math.floor((Date.UTC(when.getUTCFullYear(), when.getUTCMonth(), when.getUTCDate()) - Date.UTC(when.getUTCFullYear(), 0, 0)) / 86400000);\n  const overrideIdx = Number(cfg.poolIndexOverride);\n  const poolIndex = Number.isInteger(overrideIdx) && overrideIdx >= 0 ? overrideIdx % POOL.length : dayOfYear % POOL.length;\n  const entry = POOL[poolIndex];\n\n  const bgVideo = clean(cfg.backgroundVideoOverride) || entry.video;\n  const musicUrl = clean(cfg.musicUrlOverride) || entry.music;\n  // An override video has an unknown length, so never let the quote scene run\n  // past the shortest clip in the pool.\n  const bgSeconds = clean(cfg.backgroundVideoOverride) ? 10.4 : entry.videoSeconds;\n\n  // ---- adaptive type ------------------------------------------------------\n  // Greedy word-wrap estimate calibrated against the rendered source example\n  // (\"Almost everything will work\" = 27 chars exactly fills 840px at 62px, so\n  // the average glyph runs ~0.50em in Playfair italic).\n  const wrapLines = (text, fontPx, boxPx, avgEm) => {\n    const perLine = Math.max(6, Math.floor(boxPx / (fontPx * avgEm)));\n    let lines = 1;\n    let used = 0;\n    for (const w of String(text).split(' ')) {\n      const need = used === 0 ? w.length : used + 1 + w.length;\n      if (need <= perLine) { used = need; continue; }\n      lines += 1;\n      used = Math.min(w.length, perLine);\n    }\n    return lines;\n  };\n\n  const qLen = quote.length;\n  const quoteSize = qLen <= 90 ? 62 : qLen <= 140 ? 54 : qLen <= 180 ? 48 : 42;\n  const quoteLines = wrapLines(quote, quoteSize, 840, 0.5);\n  const quoteBlockH = Math.round(quoteLines * quoteSize * 1.35);\n  // Keep the block visually centred where the source design places it, but\n  // never above the big quote glyph.\n  const quoteY = Math.max(600, Math.min(700, Math.round(800 - quoteBlockH / 2)));\n\n  // Reading-time scene length: never past the background clip.\n  const quoteSeconds = round(Math.min(Math.max(7, 3.5 + qLen * 0.03), 9.8, bgSeconds - 0.4));\n  const cardSeconds = 4.6;\n\n  const nameSize = author.length <= 20 ? 56 : author.length <= 30 ? 46 : 40;\n  const nameLines = wrapLines(author, nameSize, 860, 0.55);\n  const noteY = Math.round(850 + nameLines * nameSize * 1.25 + 30);\n  const noteLines = authorNote ? wrapLines(authorNote, 27, 800, 0.62 + 2 / 27) : 0;\n  const ctaY = Math.max(1160, noteY + noteLines * 40 + 110);\n\n  // ---- scenes -------------------------------------------------------------\n  const s1 = {\n    id: 'quote',\n    duration: quoteSeconds,\n    backgroundColor: '#1B1E22',\n    transition: 'fade',\n    transitionId: 'author',\n    transitionDuration: 0.8,\n    visuals: [\n      { type: 'VIDEO', src: bgVideo, width: 1080, height: 1920, position: 'center-center', resize: 'cover', volume: 0, track: 0, enterBegin: 0, exitEnd: quoteSeconds },\n      {\n        type: 'SVG', width: 1080, height: 1920, track: 1, enterBegin: 0, exitEnd: quoteSeconds,\n        svg: \"<svg width='1080' height='1920' viewBox='0 0 1080 1920' xmlns='http://www.w3.org/2000/svg'><rect width='1080' height='1920' fill='rgba(20,24,26,\" + entry.overlay + \")'/><rect x='70' y='70' width='940' height='1780' fill='none' stroke='rgba(240,236,227,0.35)' stroke-width='1'/><text x='150' y='560' font-family='Georgia' font-size='220' fill='rgba(240,236,227,0.55)'>&#8220;</text><path d='M420 1480 H660' stroke='rgba(240,236,227,0.6)' stroke-width='1.5'/></svg>\",\n      },\n      {\n        type: 'TEXT', x: 540, y: 170, anchor: 'top-center', track: 2, enterBegin: 0.3, enterEnd: 0.9, enterAnimation: 'fade', exitEnd: quoteSeconds,\n        style: { fontFamily: uiFont },\n        html: \"<div style=\\\"text-align:center; color:\" + muted + \"; font-size:23px; font-weight:600; letter-spacing:7px; text-shadow:0 2px 14px rgba(20,24,26,0.75);\\\">\" + esc(channelName) + '</div>',\n      },\n      {\n        type: 'TEXT', x: 540, y: quoteY, width: 840, anchor: 'top-center', track: 3, enterBegin: 0.7, enterEnd: 1.5, enterAnimation: 'smoothup', exitEnd: quoteSeconds,\n        style: { fontFamily: quoteFont },\n        html: \"<div style=\\\"text-align:center; color:\" + paper + '; font-size:' + quoteSize + \"px; line-height:1.35; font-style:italic;\\\">\" + esc(quote) + '</div>',\n      },\n      {\n        type: 'TEXT', x: 540, y: 1530, width: 800, anchor: 'top-center', track: 4, enterBegin: 1.8, enterEnd: 2.4, enterAnimation: 'fade', exitEnd: quoteSeconds,\n        style: { fontFamily: uiFont },\n        html: \"<div style=\\\"text-align:center; color:\" + paper + \"; font-size:34px; font-weight:700; letter-spacing:2px;\\\">&mdash; \" + esc(author) + '</div>',\n      },\n    ],\n  };\n\n  const s2 = {\n    id: 'author',\n    duration: cardSeconds,\n    backgroundColor: ink,\n    visuals: [\n      { type: 'IMAGE', src: 'https://images.pexels.com/photos/15637846/pexels-photo-15637846.jpeg?auto=compress&cs=tinysrgb&w=1620', width: 1080, height: 1920, position: 'center-center', resize: 'cover', zoom: true, opacity: 0.5, track: 0, enterBegin: 0, exitEnd: cardSeconds },\n      {\n        type: 'SVG', width: 1080, height: 1920, track: 1, enterBegin: 0, exitEnd: cardSeconds,\n        svg: \"<svg width='1080' height='1920' viewBox='0 0 1080 1920' xmlns='http://www.w3.org/2000/svg'><defs><linearGradient id='dqrEnd' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#14181A' stop-opacity='0.6'/><stop offset='1' stop-color='#14181A' stop-opacity='0.92'/></linearGradient></defs><rect width='1080' height='1920' fill='url(#dqrEnd)'/><circle cx='540' cy='760' r='6' fill='#F0ECE3'/><path d='M420 760 H520 M560 760 H660' stroke='rgba(240,236,227,0.5)' stroke-width='1'/></svg>\",\n      },\n      {\n        type: 'TEXT', x: 540, y: 850, width: 860, anchor: 'top-center', track: 2, enterBegin: 0.3, enterEnd: 0.9, enterAnimation: 'smoothup', exitEnd: cardSeconds,\n        style: { fontFamily: quoteFont },\n        html: \"<div style=\\\"text-align:center; color:\" + paper + '; font-size:' + nameSize + \"px; font-weight:700;\\\">\" + esc(author) + '</div>',\n      },\n      {\n        type: 'TEXT', x: 540, y: ctaY, anchor: 'top-center', track: 4, enterBegin: 1.1, enterEnd: 1.5, enterAnimation: 'circleopen', exitEnd: cardSeconds,\n        style: { fontFamily: uiFont },\n        html: \"<div style=\\\"display:inline-block; border:1.5px solid \" + paper + '; color:' + paper + \"; border-radius:999px; padding:22px 56px; font-size:30px; font-weight:700;\\\">\" + esc(ctaText) + \"</div><div style=\\\"margin-top:16px; text-align:center; color:#7E7A6F; font-size:23px; letter-spacing:5px;\\\">\" + esc(channelName) + '</div>',\n      },\n    ],\n  };\n  if (authorNote) {\n    s2.visuals.splice(3, 0, {\n      type: 'TEXT', x: 540, y: noteY, width: 800, anchor: 'top-center', track: 3, enterBegin: 0.7, enterEnd: 1.2, enterAnimation: 'fade', exitEnd: cardSeconds,\n      style: { fontFamily: uiFont },\n      html: \"<div style=\\\"text-align:center; color:#A8A396; font-size:27px; font-weight:500; letter-spacing:2px;\\\">\" + esc(authorNote) + '</div>',\n    });\n  }\n\n  const totalSeconds = round(quoteSeconds + cardSeconds - 0.8);\n  // The render API only allows letters, digits, spaces, _ and - in `name`.\n  const safeName = ('daily-quote-' + author).toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);\n\n  const payload = {\n    name: safeName || 'Daily quote',\n    resolution: 'instagram-reel',\n    frameRate: 30,\n    backgroundColor: '#1B1E22',\n    outputFormat: 'mp4',\n    scenes: [s1, s2],\n    // NOTE: no `track` here — the render API rejects audios[].track.\n    audios: [{ src: musicUrl, volume: Number(cfg.musicVolume ?? 0.15) }],\n  };\n\n  return {\n    payload,\n    meta: {\n      poolIndex,\n      poolLabel: entry.label,\n      bgVideo,\n      musicUrl,\n      quoteSeconds,\n      totalSeconds,\n      quoteSize,\n      quoteLines,\n      quote,\n      author,\n      quoteChars: qLen,\n    },\n  };\n}\n\n// === n8n glue ===\nconst config = $('Config').first().json;\nconst row = $input.first().json;\nconst built = buildProject(config, { quote: row.quote, author: row.author, authorNote: row.authorNote, date: new Date() });\nbuilt.meta.rowNumber = row.rowNumber;\nreturn [{ json: built }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        220
+      ],
+      "id": "zvid-dq-0008",
+      "name": "Build project JSON"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.apiUrl }}/api/render/validate/api-key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ payload: $json.payload }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        860,
+        220
+      ],
+      "id": "zvid-dq-0009",
+      "name": "Validate project (free)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// The free validate endpoint runs the exact pipeline a render submission runs,\n// so a failure here is a payload bug — surface the field list instead of a\n// generic HTTP error.\nconst res = $input.first().json;\nconst status = res.statusCode;\nconst body = res.body || {};\n\nif (status !== 200) {\n  const details = Array.isArray(body.details)\n    ? body.details.map((d) => '  - ' + d.field + ': ' + d.message).join('\\n')\n    : JSON.stringify(body).slice(0, 500);\n  throw new Error('Zvid rejected the project (HTTP ' + status + '): ' + (body.message || body.error) + '\\n' + details);\n}\n\nconst build = $('Build project JSON').first().json;\nreturn [{\n  json: {\n    ...build,\n    creditsRequired: body.creditsRequired,\n    warnings: body.warnings || [],\n    schemaVersion: body.schemaVersion,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        220
+      ],
+      "id": "zvid-dq-0010",
+      "name": "Check validation"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.apiUrl }}/api/render/api-key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ payload: $json.payload }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        380
+      ],
+      "id": "zvid-dq-0014",
+      "name": "Submit render",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Config').first().json.pollSeconds }}",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1740,
+        380
+      ],
+      "id": "zvid-dq-0015",
+      "name": "Wait",
+      "webhookId": "e3a91c7b-42d6-4f0a-b7c9-8d15f2a6e930"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config').first().json.apiUrl }}/api/jobs/{{ $('Submit render').first().json.jobId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        380
+      ],
+      "id": "zvid-dq-0016",
+      "name": "Get render status",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "render-finished--cond",
+              "leftValue": "={{ $json.state === 'completed' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2180,
+        380
+      ],
+      "id": "zvid-dq-0017",
+      "name": "Render finished?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fails fast on a failed render and stops the poll loop from running forever.\nconst cfg = $('Config').first().json;\nconst job = $input.first().json;\n\nif (job.state === 'failed') {\n  throw new Error('Render failed: ' + (job.failedReason || 'no reason given'));\n}\n\nconst maxPolls = Math.ceil((Number(cfg.timeoutMinutes || 20) * 60) / Number(cfg.pollSeconds || 10));\nif ($runIndex + 1 >= maxPolls) {\n  throw new Error('Render did not finish within ' + cfg.timeoutMinutes + ' minutes (job ' + job.id + ', state ' + job.state + ').');\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        600
+      ],
+      "id": "zvid-dq-0018",
+      "name": "Still rendering?"
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Build project JSON').first().json.meta.rowNumber }}",
+            "Status": "={{ $('Config').first().json.statusDoneValue }}",
+            "VideoUrl": "={{ typeof $json.result === 'string' ? $json.result : ($json.result ? $json.result.url : '') }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "VideoUrl",
+              "displayName": "VideoUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2400,
+        280
+      ],
+      "id": "zvid-dq-0019",
+      "name": "Mark row done",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final report for a live run. By the time this executes the sheet row is\n// already marked done with the video URL.\nconst cfg = $('Config').first().json;\nconst build = $('Check validation').first().json;\nconst job = $('Get render status').first().json;\nconst url = typeof job.result === 'string' ? job.result : (job.result ? job.result.url : null);\n\nreturn [{\n  json: {\n    rendered: true,\n    videoUrl: url,\n    jobId: job.id,\n    author: build.meta.author,\n    background: build.meta.poolLabel,\n    videoSeconds: build.meta.totalSeconds,\n    creditsCharged: build.creditsRequired,\n    sheetRow: build.meta.rowNumber,\n    sheetStatus: cfg.statusDoneValue,\n    channel: cfg.channelName,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2620,
+        280
+      ],
+      "id": "zvid-dq-0020",
+      "name": "Run summary"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2840,
+        280
+      ],
+      "id": "zvid-dq-0027",
+      "name": "▶ Watch video",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "width": 420,
+        "height": 240,
+        "color": 3,
+        "content": "## ▶ Watch video\n\nClick this node after a run: n8n renders the downloaded MP4 as an inline\nvideo player with a download button — today's quote reel, no URL to copy.\n\n*Run summary* before it still carries `videoUrl` (and `jobId`,\n`creditsCharged`) if you want to pipe the result onward."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        440
+      ],
+      "id": "zvid-dq-0028",
+      "name": "Note 27"
+    },
+    {
+      "parameters": {
+        "width": 860,
+        "height": 600,
+        "color": 4,
+        "content": "## Daily motivational quote videos from a Google Sheet\n\nEvery morning this workflow takes the first quote in your sheet that has not\nbeen used yet, renders it as a polished 1080x1920 quote reel (~11-14 s) with\nZvid, then writes the finished video URL back to that row and marks it done.\nThe background footage and music rotate daily from a curated pool, so the\nchannel never posts the same look two days in a row.\n\n### Setup (about three minutes)\n\n1. **Zvid API key** — create one at https://app.zvid.io/api-keys\n   Add an n8n **Header Auth** credential: name `x-api-key`, value = your key.\n   Attach it to *Validate project (free)*, *Save draft to editor*,\n   *Submit render* and *Get render status*.\n2. **Google Sheets** — attach your Google credential to *Read quote sheet* and\n   *Mark row done*, then pick your spreadsheet and tab in both nodes.\n   The expected columns are in the yellow note next to the sheet node.\n3. **Open `Config`** — set `channelName` and `ctaText` to your brand.\n4. **Run it — the first run renders for real and spends about 11 credits.**\n   `dryRun` is `false` out of the box. When it finishes, click\n   **▶ Watch video** to play the reel right here in n8n.\n5. Want a free preview first? Set `dryRun: true` in **Config**: you get the\n   credit quote plus an **editorLink** to watch the video in the editor,\n   nothing spent and the sheet untouched. Set it back to `false` to render.\n6. **Activate** — it posts a fresh quote video to the sheet every day at 8am.\n\n### Cost per video\n\nA ~11 s quote reel is about **11 credits**; a two-hundred-character quote\n(~14 s) is about **14**. *Validate project (free)* runs before every render and\nreports the figure as `creditsCharged`, but the render then proceeds on its\nown — a `dryRun: true` pass gives you the number without spending anything."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -320
+      ],
+      "id": "zvid-dq-0021",
+      "name": "Note 21"
+    },
+    {
+      "parameters": {
+        "width": 620,
+        "height": 340,
+        "color": 5,
+        "content": "## Your sheet: five columns\n\nHeader row (row 1), spelled exactly like this:\n\n| Quote | Author | AuthorNote | Status | VideoUrl |\n| --- | --- | --- | --- | --- |\n\n- **Quote** + **Author** — required. AuthorNote is an optional line under the\n  author's name on the end card (\"Writer & essayist\").\n- **Status** — leave EMPTY for quotes waiting to be rendered. The workflow\n  takes the first empty-Status row (top to bottom), and writes `done` +\n  the video URL when the render finishes. Put anything in Status by hand to\n  skip a row.\n- Batch-paste a month of quotes whenever you like — one row is consumed per\n  day, and when every row is used the workflow simply reports \"nothing to\n  render\" until you add more."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        560
+      ],
+      "id": "zvid-dq-0022",
+      "name": "Note 22"
+    },
+    {
+      "parameters": {
+        "width": 640,
+        "height": 340,
+        "color": 6,
+        "content": "## Why it looks different every day\n\n*Build project JSON* carries a **pool of five curated background clips, each\npaired with a music bed** — misty forest, ember ink, rain on a window, a sea\nof clouds, a calm shore. The day-of-year picks the entry\n(`dayOfYear % 5`), so the rotation is deterministic: no repeats on\nconsecutive days within a year, and a re-run on the same day produces the same\nlook. (A leap year ends on day 366 and 366 % 5 == 1 % 5, so that one New Year's\nDay repeats New Year's Eve — pin poolIndexOverride if it matters.)\nEvery URL in the pool was verified reachable when this template was built.\n\n- Pin one look: set `poolIndexOverride` (0-4) in Config.\n- Bring your own: `backgroundVideoOverride` / `musicUrlOverride`\n  (portrait ~1080x1920, at least 10 s of video).\n\nType scales with content: the quote drops from 62 px to 42 px as it grows\ntowards ~220 characters, and long author names shrink to fit the end card —\nno clipping, no overflow."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -180
+      ],
+      "id": "zvid-dq-0023",
+      "name": "Note 23"
+    },
+    {
+      "parameters": {
+        "width": 620,
+        "height": 300,
+        "color": 4,
+        "content": "## Free preview: the optional dry run\n\n**`dryRun` is `false` in Config, so a run renders for real.** Set it to\n`true` whenever you want a free pass instead: the workflow validates the\npayload, quotes the exact credit cost and saves the project as a **draft**,\nthen reports an **editorLink** like `https://editor.zvid.io/?project=prj_...`\n\nOpen it to watch the exact video and tweak anything by hand, with nothing\nspent. **The sheet row is not marked done on a dry run**, so the next real\nrun renders the same quote.\n\nSet `dryRun` back to `false` to render and mark the row done."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1480,
+        -260
+      ],
+      "id": "zvid-dq-0024",
+      "name": "Note 24"
+    },
+    {
+      "parameters": {
+        "width": 660,
+        "height": 320,
+        "color": 7,
+        "content": "## Publishing the video (optional tail)\n\nThe workflow ends with the video URL in the sheet — a clean handoff you can\nextend after **Mark row done**:\n\n- **YouTube Shorts** — add an *HTTP Request* node (GET the `videoUrl`,\n  response format `File`) followed by the native **YouTube** node\n  (Video → Upload, binary `data`). Needs a YouTube OAuth2 credential.\n- **Instagram / TikTok / everywhere** — pass `videoUrl` to a scheduler\n  like Blotato, Buffer or Metricool via their HTTP API; they accept a public\n  video URL directly, no download step needed.\n- **Human in the loop** — a Slack or Email node that sends `videoUrl` to\n  whoever posts manually.\n\nThey are left out of the required path on purpose so the template imports\nand runs with a Zvid key and a Google account, nothing else."
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        -60
+      ],
+      "id": "zvid-dq-0025",
+      "name": "Note 25"
+    },
+    {
+      "parameters": {
+        "width": 620,
+        "height": 260,
+        "color": 6,
+        "content": "## Official Zvid nodes\n\nThese HTTP Request nodes are deliberately core-only so the workflow runs\nanywhere, including n8n Cloud with nothing installed.\n\nOn self-hosted n8n you can install **`@zvid/n8n-nodes-zvid`**\n(Settings → Community nodes) and swap:\n\n| HTTP Request node | Native replacement |\n| --- | --- |\n| Validate project (free) | **Zvid** → Render → Validate |\n| Submit render | **Zvid** → Render → Create |\n| Get render status + Wait | **Zvid Trigger** (render webhook) |"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1860,
+        660
+      ],
+      "id": "zvid-dq-0026",
+      "name": "Note 26"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dry-run--cond",
+              "leftValue": "={{ $('Config').first().json.dryRun }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1300,
+        220
+      ],
+      "id": "zvid-dq-0011",
+      "name": "Dry run?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.apiUrl }}/api/projects",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.payload.name, payload: $json.payload }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        60
+      ],
+      "id": "zvid-dq-0012",
+      "name": "Save draft to editor",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dry run: everything except the paid render. Open editorLink to preview the\n// exact video, then set dryRun to false in Config to go live. The sheet row is\n// NOT touched on a dry run, so tomorrow's real run picks the same quote.\nconst cfg = $('Config').first().json;\nconst d = $('Check validation').first().json;\n\n// The draft save is best-effort (onError: continue) so a hiccup there never\n// hides the rest of the dry-run report.\nlet editorLink = null;\nlet draftId = null;\ntry {\n  const project = $('Save draft to editor').first().json.project;\n  if (project && project.id) {\n    draftId = project.id;\n    editorLink = String(cfg.editorUrl || 'https://editor.zvid.io').replace(/\\/+$/, '') + '/?project=' + project.id;\n  }\n} catch (e) { /* draft step skipped or failed */ }\n\nreturn [{\n  json: {\n    dryRun: true,\n    quote: d.meta.quote,\n    author: d.meta.author,\n    sheetRow: d.meta.rowNumber,\n    background: d.meta.poolLabel,\n    editorLink,\n    draftId,\n    creditsRequired: d.creditsRequired,\n    videoSeconds: d.meta.totalSeconds,\n    warnings: d.warnings,\n    sheetUpdated: false,\n    nextStep: editorLink\n      ? 'Open editorLink to preview the draft, then set dryRun to false in Config to render and mark the row done.'\n      : 'Set dryRun to false in Config to render this for real.',\n    payload: d.payload,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        60
+      ],
+      "id": "zvid-dq-0013",
+      "name": "Dry run summary"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every day at 8am": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test manually": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read quote sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read quote sheet": {
+      "main": [
+        [
+          {
+            "node": "Pick next quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick next quote": {
+      "main": [
+        [
+          {
+            "node": "Row found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Row found?": {
+      "main": [
+        [
+          {
+            "node": "Build project JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nothing to render today",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build project JSON": {
+      "main": [
+        [
+          {
+            "node": "Validate project (free)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate project (free)": {
+      "main": [
+        [
+          {
+            "node": "Check validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check validation": {
+      "main": [
+        [
+          {
+            "node": "Dry run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dry run?": {
+      "main": [
+        [
+          {
+            "node": "Save draft to editor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Submit render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save draft to editor": {
+      "main": [
+        [
+          {
+            "node": "Dry run summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit render": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get render status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get render status": {
+      "main": [
+        [
+          {
+            "node": "Render finished?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render finished?": {
+      "main": [
+        [
+          {
+            "node": "Mark row done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Still rendering?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still rendering?": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark row done": {
+      "main": [
+        [
+          {
+            "node": "Run summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run summary": {
+      "main": [
+        [
+          {
+            "node": "▶ Watch video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f2b8d4a1-9c37-4e62-8a05-6d1c9e3b7f48",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "ZvidDailyQuoteReels",
+  "tags": []
+}

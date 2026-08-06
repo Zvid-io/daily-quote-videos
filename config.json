@@ -1,0 +1,16 @@
+{
+  "channelName": "@stillmind.daily",
+  "ctaText": "Follow for a daily reset",
+  "quoteFont": "Playfair Display",
+  "uiFont": "Inter",
+  "paperColor": "#F0ECE3",
+  "mutedColor": "#B9B4A6",
+  "inkColor": "#14181A",
+  "musicVolume": 0.15,
+  "poolIndexOverride": -1,
+  "backgroundVideoOverride": "",
+  "musicUrlOverride": "",
+  "statusDoneValue": "done",
+  "pollSeconds": 10,
+  "timeoutMinutes": 20
+}

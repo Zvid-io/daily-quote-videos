@@ -1,0 +1,31 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      csv-parse:
+        specifier: ^6.0.0
+        version: 6.2.1
+      '@zvid/sdk':
+        specifier: ^0.2.0
+        version: 0.2.0
+
+packages:
+
+  csv-parse@6.2.1:
+    resolution: {integrity: sha512-LRLMV+UCyfMokp8Wb411duBf1gaBKJfOfBWU9eHMJ+b+cJYZsNu3AFmjJf3+yPGd59Exz1TsMjaSFyxnYB9+IQ==}
+
+  '@zvid/sdk@0.2.0':
+    resolution: {integrity: sha512-aIMicfhsPMTlV3u91aRMnQkJoCPs070+J0e/u6rmqU0eqKN745ACRYlrBk4ADU318AyEF/9Imao4ZSc3UaZAZQ==}
+    engines: {node: '>=18'}
+
+snapshots:
+
+  csv-parse@6.2.1: {}
+
+  '@zvid/sdk@0.2.0': {}
