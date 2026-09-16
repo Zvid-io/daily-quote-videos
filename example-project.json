@@ -90,7 +90,7 @@
       "visuals": [
         {
           "type": "IMAGE",
-          "src": "https://images.pexels.com/photos/15637846/pexels-photo-15637846.jpeg?auto=compress&cs=tinysrgb&w=1620",
+          "src": "https://images.pexels.com/photos/15637846/pexels-photo-15637846.jpeg?auto=compress&cs=tinysrgb&w=1080&h=1920&fit=crop",
           "width": 1080,
           "height": 1920,
           "position": "center-center",
