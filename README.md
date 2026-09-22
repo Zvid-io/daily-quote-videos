@@ -171,3 +171,9 @@ than placeholder bylines:
 ## License
 
 MIT
+
+## Community and support
+
+Join the [Zvid community on Discord](https://discord.gg/MZyWKqHDj3) to ask
+questions, discuss video automation workflows, and share what you build.
+For private account or billing questions, email [help@zvid.io](mailto:help@zvid.io).
