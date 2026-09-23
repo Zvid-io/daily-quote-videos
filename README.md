@@ -176,4 +176,4 @@ MIT
 
 Join the [Zvid community on Discord](https://discord.gg/MZyWKqHDj3) to ask
 questions, discuss video automation workflows, and share what you build.
-For private account or billing questions, email [help@zvid.io](mailto:help@zvid.io).
+For private account or billing questions, use our [contact form](https://zvid.io/contact).
