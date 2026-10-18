@@ -29,6 +29,7 @@ async function main() {
       'no-download': { type: 'boolean', default: false },
       'poll-interval': { type: 'string' },
       timeout: { type: 'string' },
+      'max-credits': { type: 'string' },
       help: { type: 'boolean', default: false },
     },
   });
@@ -39,6 +40,14 @@ async function main() {
   }
 
   const config = readJson(options.config);
+  const positiveNumber = (value, label) => {
+    const number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) throw new Error(`${label} must be a positive number`);
+    return number;
+  };
+  const pollSeconds = Math.max(2, positiveNumber(options['poll-interval'] ?? config.pollSeconds ?? 10, 'poll interval'));
+  const timeoutMinutes = positiveNumber(options.timeout ?? config.timeoutMinutes ?? 20, 'timeout');
+  const maxCredits = options['max-credits'] === undefined ? null : positiveNumber(options['max-credits'], 'max credits');
   const { records, pending } = loadQueue(options.data);
   if (!pending) {
     console.log('Nothing to render: every quote row already has a Status value.');
@@ -46,7 +55,7 @@ async function main() {
   }
 
   const date = options.date ? new Date(`${options.date}T12:00:00Z`) : new Date();
-  if (Number.isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime()) || (options.date && (!/^\d{4}-\d{2}-\d{2}$/.test(options.date) || date.toISOString().slice(0, 10) !== options.date))) {
     throw new Error(`Invalid --date value: ${options.date}. Use YYYY-MM-DD.`);
   }
 
@@ -127,19 +136,19 @@ async function main() {
     return EXIT_OK;
   }
 
+  if (maxCredits !== null && (!Number.isFinite(validation.creditsRequired) || validation.creditsRequired > maxCredits)) {
+    throw new Error(`Quoted credits (${validation.creditsRequired}) exceed or cannot be checked against --max-credits ${maxCredits}. No render submitted.`);
+  }
   const submitted = await client.renders.create({ payload: built.payload });
   const jobId = submitted.jobId;
   if (!jobId) throw new Error('The render API did not return a jobId');
   console.log(`  Render queued: ${color.cyan(jobId)}`);
 
-  const pollSeconds = Math.max(
-    2,
-    Number(options['poll-interval'] || config.pollSeconds || 10)
-  );
-  const timeoutMinutes = Math.max(
-    1,
-    Number(options.timeout || config.timeoutMinutes || 20)
-  );
+  // Save the accepted job before polling. A timeout is not permission to resubmit.
+  writeJson(path.join(options.out, 'result.json'), {
+    rendered: false, state: 'submitted', jobId, sheetRow: pending.sheetRow,
+    creditsQuoted: validation.creditsRequired,
+  });
   const deadline = Date.now() + timeoutMinutes * 60_000;
   let job;
 
@@ -147,6 +156,10 @@ async function main() {
     job = await client.jobs.get(jobId);
     if (job.state === 'completed') break;
     if (job.state === 'failed') {
+      writeJson(path.join(options.out, 'result.json'), {
+        rendered: false, state: 'failed', jobId, failedReason: job.failedReason || null,
+        sheetRow: pending.sheetRow, creditsQuoted: validation.creditsRequired,
+      });
       throw new Error(`Render failed: ${job.failedReason || 'no reason given'}`);
     }
     if (Date.now() >= deadline) {
@@ -160,11 +173,6 @@ async function main() {
   if (!videoUrl) throw new Error(`Completed render ${jobId} has no video URL`);
 
   const videoFile = path.join(options.out, `${built.payload.name}.mp4`);
-  if (!options['no-download']) {
-    await downloadFile(videoUrl, videoFile);
-    console.log(`  Downloaded ${videoFile}`);
-  }
-
   pending.record.Status = config.statusDoneValue || 'done';
   pending.record.VideoUrl = videoUrl;
   writeQueue(path.join(options.out, 'quotes.csv'), records);
@@ -173,15 +181,28 @@ async function main() {
     rendered: true,
     jobId,
     videoUrl,
-    localFile: options['no-download'] ? null : videoFile,
+    localFile: null,
     sheetRow: pending.sheetRow,
     sheetStatus: pending.record.Status,
     author: built.meta.author,
     background: built.meta.poolLabel,
     videoSeconds: built.meta.totalSeconds,
-    creditsCharged: validation.creditsRequired,
+    creditsQuoted: validation.creditsRequired,
   };
   writeJson(path.join(options.out, 'result.json'), result);
+
+  // The completed URL and queue survive a failed preview download, as in n8n.
+  if (!options['no-download']) {
+    try {
+      await downloadFile(videoUrl, videoFile);
+      result.localFile = videoFile;
+      console.log(`  Downloaded ${videoFile}`);
+    } catch (error) {
+      result.downloadWarning = error.message;
+      console.warn(color.yellow('Video rendered; local download failed. Use the URL in result.json instead of rendering again.'));
+    }
+    writeJson(path.join(options.out, 'result.json'), result);
+  }
 
   console.log(
     color.green(
@@ -219,6 +240,7 @@ Options:
   --no-download                   keep only the CDN URL and result files
   --poll-interval <seconds>       job polling interval
   --timeout <minutes>             render timeout
+  --max-credits <number>          refuse submission when the validation quote exceeds this value
 
 Environment:
   ZVID_API_KEY                    required; create at https://app.zvid.io/api-keys

@@ -31,7 +31,7 @@
   "links": {
     "website": "https://zvid.io",
     "documentation": "https://docs.zvid.io",
-    "workflowTemplates": "https://zvid.io/n8n-workflows",
+    "workflowTemplates": "https://zvid.io/n8n/workflows",
     "dashboard": "https://app.zvid.io",
     "apiKeys": "https://app.zvid.io/api-keys",
     "visualEditor": "https://editor.zvid.io",
@@ -42,7 +42,7 @@
     "url": "git+https://github.com/Zvid-io/daily-quote-videos.git"
   },
   "bugs": {
-    "url": "https://github.com/Zvid-io/daily-quote-videos/issues"
+    "url": "https://zvid.io/contact"
   },
   "author": "Zvid (https://zvid.io/contact)",
   "license": "MIT",
@@ -54,7 +54,8 @@
     "check": "node src/check.js",
     "start": "node src/index.js",
     "dry-run": "node src/index.js --dry-run",
-    "sample": "node src/index.js --date 2026-07-28"
+    "sample": "node src/index.js --date 2026-07-28",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "csv-parse": "^6.0.0",

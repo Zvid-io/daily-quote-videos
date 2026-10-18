@@ -17,7 +17,7 @@ const requiredNodes = [
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 for (const [label, url] of [
   ['homepage', packageJson.homepage],
-  ['docs', packageJson.docs],
+  ['docs', packageJson.links?.documentation],
   ['repository', packageJson.repository?.url?.replace(/^git\+/, '')],
   ['bugs', packageJson.bugs?.url],
 ]) {
@@ -34,6 +34,11 @@ if (missingNodes.length) {
 }
 
 const workflowText = JSON.stringify(workflow);
+for (const name of ['Validate project (free)', 'Submit render', 'Get render status', 'Save draft to editor']) {
+  if (workflow.nodes.find((node) => node.name === name)?.type !== '@zvid/n8n-nodes-zvid.zvid') {
+    throw new Error(`${name} must use the published Zvid community node`);
+  }
+}
 if (/((?<!@zvid\/)n8n-nodes-zvid)|zvidAgentTools/.test(workflowText)) {
   throw new Error('Workflow contains an unpublished or removed n8n node type');
 }

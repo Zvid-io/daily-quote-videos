@@ -1,18 +1,17 @@
 # n8n setup: Google Sheets to daily quote videos
 
 Import [`zvid-daily-quote-reels.workflow.json`](zvid-daily-quote-reels.workflow.json)
-into n8n. The workflow uses only built-in Schedule, Set, Code, IF, HTTP Request,
-Wait, and Google Sheets nodes.
+into n8n. Before configuring Zvid credentials, install **`@zvid/n8n-nodes-zvid`**
+from **Settings → Community nodes**. A workspace owner/admin may need to install it.
+The four supported Zvid operations use the published Zvid node. The final HTTP
+Request node downloads completed media; it does not replace a supported Zvid action.
 
 ## Credentials
 
 ### Zvid API
 
 Create a key at [https://app.zvid.io/api-keys](https://app.zvid.io/api-keys),
-then create an n8n **Header Auth** credential:
-
-- Header name: `x-api-key`
-- Header value: your `zvid_…` key
+then create an n8n **Zvid API** credential using your key.
 
 Attach it to **Validate project (free)**, **Save draft to editor**,
 **Submit render**, and **Get render status**.
@@ -32,8 +31,9 @@ the exact headers and three pending examples. `Quote` and `Author` are required;
 2. Recommended: set `dryRun` to `true` and execute manually. Validation and the
    editor draft are free; the Sheet remains unchanged.
 3. Open the returned `editorLink` to review the draft.
-4. Set `dryRun` to `false` and execute again. A short sample quote renders in
-   about 10.8 seconds of video and costs approximately 11 credits.
+4. Set `dryRun` to `false` and execute again. The tested short sample produces
+   10.8 seconds of video, with an 11-credit validation quote. This is output
+   duration, not a render-time promise. Check the quote for your own project.
 5. Confirm that the first pending Sheet row now contains `Status = done` and a
    `VideoUrl`, while the next row remains empty.
 6. Click **▶ Watch video** to play or download the MP4 inside n8n.
@@ -53,6 +53,9 @@ the exact headers and three pending examples. `Quote` and `Author` are required;
 
 Do not sort or delete rows while a run is active. The update deliberately uses
 the row number captured when the Sheet was read.
+Avoid overlapping scheduled and manual runs: this Sheet queue has no atomic
+row claim. A polling timeout can leave a render still running; check its existing
+job before retrying. Review longer quotes for fit before publication.
 
 ## Optional publishing
 
@@ -62,4 +65,8 @@ To publish elsewhere, extend the workflow after **Mark row done** or
 optional and separate from this example.
 
 For more templates, visit
-[Zvid's n8n video automation workflows](https://zvid.io/n8n-workflows).
+[Zvid's n8n video automation workflows](https://zvid.io/n8n/workflows).
+
+- [Official template](https://n8n.io/workflows/19632-create-daily-quote-videos-from-google-sheets-with-zvid/)
+- [Video walkthrough](https://youtu.be/Ra6mPdmDDYs)
+- Support: https://zvid.io/contact

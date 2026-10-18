@@ -18,7 +18,7 @@ export function loadEnv(filePath = '.env') {
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function downloadFile(url, filePath) {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
   if (!response.ok || !response.body) {
     throw new Error(`Download failed (${response.status}) for ${url}`);
   }
